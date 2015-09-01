@@ -13,14 +13,29 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
-
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('delete from score;')
+    cursor.execute('delete from match;')
+    c.commit()
+    c.close()
 
 def deletePlayers():
     """Remove all the player records from the database."""
-
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('delete from player;')
+    c.commit()
+    c.close()
 
 def countPlayers():
     """Returns the number of players currently registered."""
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('select count(*) from player;')
+    rows = cursor.fetchall()
+    c.close()
+    return int(rows[0][0])
 
 
 def registerPlayer(name):
@@ -32,6 +47,11 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('insert into player (name) values (%s)', (name,))
+    c.commit()
+    c.close()
 
 
 def playerStandings():
@@ -47,7 +67,13 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('select player.id, name, wins, matches from player, winstat, matchstat where player.id=winstat.id and player.id=matchstat.id order by wins desc,matches;')
+    rows = cursor.fetchall()
+    
+    c.close()
+    return rows
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
@@ -56,8 +82,17 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
- 
- 
+    c = connect()
+    cursor = c.cursor()
+    cursor.execute('insert into match (name) values (%s) returning id', (str(winner)+str(loser),))
+    c.commit()
+    rows = cursor.fetchall()
+    cursor.execute('insert into score (matchid, playerid, score) values (%s, %s, %s)', (rows[0][0],str(winner),'1'))
+    cursor.execute('insert into score (matchid, playerid, score) values (%s, %s, %s)', (rows[0][0],str(loser),'-1'))
+    c.commit()
+    c.close()
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
@@ -73,5 +108,15 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-
-
+    orders = playerStandings()
+    li = []
+    total = []
+    count = False
+    for item in orders:
+        li.append(item[0])
+        li.append(item[1])
+        if count:
+            total.append(tuple(li))
+            li = []
+        count = not count
+    return tuple(total)
