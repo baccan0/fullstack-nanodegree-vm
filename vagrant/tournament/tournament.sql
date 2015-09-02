@@ -5,9 +5,15 @@
 --
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
-CREATE TABLE player (id serial PRIMARY KEY, name varchar(40) NOT NULL);
-CREATE TABLE match(id serial PRIMARY KEY, name varchar(40));
-CREATE TABLE score(matchid integer REFERENCES match(id), playerid integer REFERENCES player(id), score integer, PRIMARY KEY(matchid,playerid) );
-CREATE VIEW winstat as select id,count(score) as wins from player left join (select playerid,score from score where score =1) as wins on id = playerid group by id;
-CREATE VIEW matchstat as select id, count(score) as matches from player left join score on id = playerid group by id;
 
+-- Table for players' info (id, name).
+CREATE TABLE player (id serial PRIMARY KEY, name varchar(40) NOT NULL);
+
+-- Table for matches, winners and losers.
+CREATE TABLE match(id serial PRIMARY KEY, winner integer REFERENCES player(id), loser integer REFERENCES player(id));
+
+-- View for win stats on each player (id, # of wins).
+CREATE VIEW winstat as select player.id,count(winner) as wins from player left join match on player.id = winner group by player.id;
+
+-- View for match stats on each player (id, # of matches).
+CREATE VIEW matchstat as select player.id, count(match.id) as matches from player left join match on player.id = winner or player.id =loser group by player.id;
