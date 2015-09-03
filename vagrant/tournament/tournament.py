@@ -79,6 +79,7 @@ def playerStandings():
     rows = cursor.fetchall()
     
     c.close()
+    # Return the list of player standings called rows.
     return rows
 
 def reportMatch(winner, loser):
@@ -128,4 +129,5 @@ def swissPairings():
             total.append(tuple(li))
             li = []
         count = not count
+    # Return the list of all the tuples of player pairs.
     return total
